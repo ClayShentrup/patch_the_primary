@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patch the Primary — Fix California's Top-Two with Approval Voting</title>
+<meta name="description" content="A one-sentence fix to eliminate vote-splitting in California's top-two primary. Zero new hardware. Zero new software. Just better math.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #0d1f3c; --navy-mid: #162e56;
+  --gold: #c98a1a; --gold-light: #e8a82a; --gold-pale: #fdf3e0;
+  --cream: #f8f5f0; --text: #1a1a2a; --text-mid: #4a4a5a;
+  --text-light: #7a7a8a; --border: rgba(13,31,60,0.12);
+  --white: #ffffff; --blue: #2856a3;
+  --a-color: #8b5cf6; --b-color: #ea7c2b;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.96); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.18rem; color: var(--navy); text-decoration: none; white-space: nowrap; }
+.nav-logo span { color: var(--gold); }
+.nav-center { display: flex; align-items: center; gap: 2rem; list-style: none; }
+.nav-center a { font-size: 0.87rem; font-weight: 500; color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.nav-center a:hover { color: var(--navy); }
+.nav-right { display: flex; align-items: center; gap: 1.25rem; }
+.nav-badge { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(201,138,26,0.35); padding: 0.26rem 0.7rem; border-radius: 100px; white-space: nowrap; }
+.btn-nav { background: var(--navy); color: var(--white); font-size: 0.85rem; font-weight: 600; padding: 0.42rem 1.1rem; border-radius: 6px; text-decoration: none; transition: background 0.2s; }
+.btn-nav:hover { background: var(--navy-mid); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5rem 2.5rem 3.5rem;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 0% 100%, rgba(201,138,26,0.11) 0%, transparent 65%),
+              radial-gradient(ellipse 40% 40% at 100% 0%, rgba(255,255,255,0.02) 0%, transparent 60%);
+  pointer-events: none;
+}
+.scroll-hint {
+  position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.2); font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+}
+.scroll-hint::after {
+  content: ''; width: 1px; height: 22px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.25), transparent);
+  animation: scrollPulse 1.8s ease infinite;
+}
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; }
+}
+.hero-inner {
+  position: relative; max-width: 1160px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;
+  animation: fadeUp 0.6s ease both;
+}
+
+/* Hero left */
+.hero-tag { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+.hero-headline {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.75rem);
+  line-height: 1.18; color: var(--white);
+  letter-spacing: -0.02em; margin-bottom: 1.1rem;
+  text-align: center;
+}
+.hero-headline em { font-style: italic; color: var(--gold-light); }
+.hero-answer { font-size: 1.12rem; font-weight: 500; color: rgba(255,255,255,0.92); line-height: 1.5; margin-bottom: 0.85rem; text-align: center; }
+.hero-answer strong { color: var(--gold-light); font-weight: 700; }
+.hero-body { font-size: 0.9rem; color: rgba(255,255,255,0.52); font-weight: 300; line-height: 1.72; margin-bottom: 1.25rem; }
+.hero-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.75rem; }
+.pill { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; color: rgba(255,255,255,0.46); border: 1px solid rgba(255,255,255,0.12); padding: 0.24rem 0.64rem; border-radius: 100px; }
+.hero-ctas { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+
+/* Hero right — ballot demo */
+.demo-wrap { }
+.demo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.demo-label { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.demo-label.bad { color: rgba(255,110,100,0.95); }
+.demo-label.good { color: rgba(201,168,42,1); }
+.demo-ballot {
+  background: rgba(255,255,255,0.055); border-radius: 9px;
+  padding: 1rem; border: 1px solid rgba(255,255,255,0.09);
+}
+.demo-row {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.48rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.demo-row:last-child { border-bottom: none; }
+.ctrl-radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ctrl-radio.sel::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.75); }
+.ctrl-check { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: transparent; }
+.ctrl-check.on { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.85); }
+.cand-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-a { background: var(--a-color); }
+.dot-b { background: var(--b-color); }
+.cand-info { flex: 1; }
+.cand-name { font-size: 0.78rem; color: rgba(255,255,255,0.82); display: block; }
+.cand-pct { font-size: 0.65rem; color: rgba(255,255,255,0.32); }
+.cand-adv { font-size: 0.58rem; font-weight: 700; color: var(--gold-light); margin-left: auto; flex-shrink: 0; letter-spacing: 0.04em; }
+
+/* Results summary bars */
+.demo-result {
+  background: rgba(255,255,255,0.04); border-radius: 8px;
+  padding: 0.85rem 1rem; border: 1px solid rgba(255,255,255,0.07);
+}
+.result-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 0.65rem; }
+.result-row { margin-bottom: 0.5rem; }
+.result-row:last-child { margin-bottom: 0; }
+.result-bar-wrap { display: flex; align-items: center; gap: 0.6rem; }
+.result-bar-label { font-size: 0.68rem; color: rgba(255,255,255,0.55); width: 52px; flex-shrink: 0; }
+.result-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+.result-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+.fill-a { background: var(--a-color); }
+.fill-b { background: var(--b-color); }
+.result-bar-pct { font-size: 0.68rem; color: rgba(255,255,255,0.5); width: 30px; text-align: right; flex-shrink: 0; }
+.result-seats { font-size: 0.65rem; margin-top: 0.3rem; padding-left: 58px; }
+.seats-bad { color: rgba(255,120,100,0.8); }
+.seats-good { color: rgba(100,210,140,0.85); }
+
+.demo-verdict {
+  margin-top: 1rem; padding: 0.65rem 0.9rem; border-radius: 7px;
+  font-size: 0.77rem; font-weight: 500; text-align: center;
+}
+.verdict-bad { background: rgba(220,50,50,0.13); color: rgba(255,140,130,0.92); border: 1px solid rgba(220,50,50,0.2); }
+.verdict-good { background: rgba(60,180,100,0.12); color: rgba(100,220,150,0.92); border: 1px solid rgba(60,180,100,0.22); }
+
+/* ── BUTTONS ── */
+.btn-primary { background: var(--gold); color: var(--navy); font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.91rem; padding: 0.78rem 1.65rem; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s, transform 0.15s; }
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-secondary { background: transparent; color: rgba(255,255,255,0.8); font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.91rem; padding: 0.78rem 1.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; text-decoration: none; display: inline-block; transition: border-color 0.2s, color 0.2s, transform 0.15s; }
+.btn-secondary:hover { border-color: rgba(255,255,255,0.45); color: var(--white); transform: translateY(-1px); }
+
+/* ── SECTIONS ── */
+section { padding: 5rem 2rem; }
+.container { max-width: 960px; margin: 0 auto; }
+.section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.85rem; }
+.section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.85rem, 3.2vw, 2.6rem); line-height: 1.15; color: var(--navy); letter-spacing: -0.02em; margin-bottom: 1.2rem; }
+.section-body { font-size: 1rem; color: var(--text-mid); line-height: 1.75; max-width: 650px; }
+
+/* PROBLEM */
+.problem { background: var(--cream); }
+.problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-top: 2.75rem; }
+.problem-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 1.6rem; }
+.problem-card-icon { width: 34px; height: 34px; border-radius: 7px; margin-bottom: 0.9rem; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+.icon-red { background: #fdecea; color: #c0392b; }
+.icon-gold { background: var(--gold-pale); color: var(--gold); }
+.problem-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.12rem; color: var(--navy); margin-bottom: 0.6rem; }
+.problem-card p { font-size: 0.92rem; color: var(--text-mid); line-height: 1.7; }
+
+/* HOW IT WORKS */
+.how { background: var(--white); }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6rem; margin-top: 2.75rem; }
+.step { padding: 1.6rem; border-radius: 12px; border: 1px solid var(--border); }
+.step-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: rgba(201,138,26,0.2); line-height: 1; margin-bottom: 0.8rem; }
+.step h3 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
+.step p { font-size: 0.87rem; color: var(--text-mid); line-height: 1.65; }
+
+/* REAL WORLD SECTION */
+.real-world { background: var(--navy); }
+.real-world .section-label { color: rgba(201,138,26,0.82); }
+.real-world .section-title { color: var(--white); }
+.real-world .section-body { color: rgba(255,255,255,0.6); }
+.examples-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.75rem; }
+.example-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.6rem; }
+.example-stat { font-family: 'DM Serif Display', serif; font-size: 2.2rem; color: var(--gold); line-height: 1; margin-bottom: 0.4rem; }
+.example-card h4 { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.85); margin-bottom: 0.4rem; }
+.example-card p { font-size: 0.84rem; color: rgba(255,255,255,0.48); line-height: 1.65; }
+.example-note { margin-top: 2rem; padding: 1.25rem 1.5rem; background: rgba(255,255,255,0.04); border-radius: 10px; border-left: 3px solid var(--gold); }
+.example-note p { font-size: 0.9rem; color: rgba(255,255,255,0.58); line-height: 1.7; }
+.example-note strong { color: rgba(255,255,255,0.82); }
+
+/* QUOTE */
+.quote-section { background: var(--gold-pale); border-top: 1px solid rgba(201,138,26,0.2); border-bottom: 1px solid rgba(201,138,26,0.2); }
+.quote-inner { max-width: 680px; margin: 0 auto; text-align: center; }
+blockquote { font-family: 'DM Serif Display', serif; font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.42; color: var(--navy); font-style: italic; letter-spacing: -0.01em; margin-bottom: 1.6rem; position: relative; padding: 0 1rem; }
+blockquote::before { content: '\201C'; font-size: 4rem; color: rgba(201,138,26,0.22); position: absolute; top: -1rem; left: -0.25rem; font-family: 'DM Serif Display', serif; line-height: 1; }
+.quote-attr { display: flex; align-items: center; gap: 0.85rem; justify-content: center; }
+.quote-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--navy); color: var(--white); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 0.95rem; flex-shrink: 0; }
+.quote-name { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+.quote-title { font-size: 0.78rem; color: var(--text-light); font-style: italic; }
+
+/* WHY */
+.why { background: var(--white); }
+.why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 2.5rem; }
+.why-card { border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+.why-stat { font-family: 'DM Serif Display', serif; font-size: 2.1rem; color: var(--gold); line-height: 1; margin-bottom: 0.4rem; }
+.why-card h4 { font-size: 0.9rem; font-weight: 600; color: var(--navy); margin-bottom: 0.4rem; }
+.why-card p { font-size: 0.84rem; color: var(--text-mid); line-height: 1.65; }
+
+/* FAQ */
+.faq { background: var(--cream); }
+.faq-list { margin-top: 2.5rem; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.faq-item { background: var(--white); border-bottom: 1px solid var(--border); }
+.faq-item:last-child { border-bottom: none; }
+.faq-q { font-family: 'DM Serif Display', serif; font-size: 1.08rem; color: var(--navy); padding: 1.3rem 2rem; cursor: pointer; position: relative; letter-spacing: -0.01em; user-select: none; }
+.faq-q::after { content: '+'; position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%); font-family: 'DM Sans', sans-serif; font-size: 1.25rem; color: var(--gold); font-weight: 300; transition: transform 0.2s; }
+.faq-item.open .faq-q::after { transform: translateY(-50%) rotate(45deg); }
+.faq-a { display: none; padding: 0 2rem 1.5rem; }
+.faq-item.open .faq-a { display: block; }
+.faq-a p { font-size: 0.94rem; color: var(--text-mid); line-height: 1.75; margin-bottom: 0.75rem; }
+.faq-a p:last-child { margin-bottom: 0; }
+.faq-a details { margin-top: 0.9rem; border-top: 1px solid var(--border); padding-top: 0.85rem; }
+.faq-a details summary { font-size: 0.82rem; font-weight: 600; color: var(--gold); cursor: pointer; margin-bottom: 0.6rem; list-style: none; }
+.faq-a details summary::after { content: ' →'; }
+.faq-a details p { font-size: 0.85rem; color: var(--text-light); }
+.faq-a a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+
+/* JOIN */
+.join { background: var(--navy); }
+.join .section-title { color: var(--white); }
+.join-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 2.75rem; align-items: start; }
+.join-body { color: rgba(255,255,255,0.6); font-size: 1rem; line-height: 1.75; margin-bottom: 1.6rem; }
+.discord-link { display: inline-flex; align-items: center; gap: 0.55rem; color: rgba(255,255,255,0.56); font-size: 0.87rem; text-decoration: none; border: 1px solid rgba(255,255,255,0.13); padding: 0.58rem 1.15rem; border-radius: 8px; transition: border-color 0.2s, color 0.2s; }
+.discord-link:hover { border-color: rgba(255,255,255,0.32); color: rgba(255,255,255,0.88); }
+.form-panel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 14px; padding: 2.1rem; }
+.form-panel h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--white); margin-bottom: 0.4rem; }
+.form-panel > p { font-size: 0.85rem; color: rgba(255,255,255,0.42); margin-bottom: 0; }
+.form-note { font-size: 0.74rem; color: rgba(255,255,255,0.26); margin-top: 0.9rem; line-height: 1.5; }
+
+/* FOOTER */
+footer { background: #080f1d; padding: 2.5rem 2rem; text-align: center; }
+.footer-logo { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--white); margin-bottom: 0.6rem; }
+.footer-logo span { color: var(--gold); }
+footer p { font-size: 0.78rem; color: rgba(255,255,255,0.26); line-height: 1.6; }
+footer a { color: rgba(255,255,255,0.4); text-decoration: none; }
+footer a:hover { color: var(--gold); }
+
+/* QUOTE STRIP */
+.quote-strip {
+  background: var(--gold-pale);
+  border-top: 1px solid rgba(201,138,26,0.25);
+  border-bottom: 1px solid rgba(201,138,26,0.25);
+  padding: 1.5rem 2.5rem;
+}
+.quote-strip-inner {
+  max-width: 1160px; margin: 0 auto;
+  display: flex; align-items: center; gap: 1.25rem;
+}
+.quote-strip-avatar {
+  width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+  background: var(--navy); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Serif Display', serif; font-size: 1rem;
+}
+.quote-strip-text { flex: 1; }
+.quote-strip-text p {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  font-style: italic; color: var(--navy);
+  line-height: 1.45; margin-bottom: 0.3rem;
+}
+.quote-strip-attr {
+  font-size: 0.75rem; color: var(--text-light); font-style: normal;
+}
+
+/* JOIN - compact horizontal */
+.join { padding: 3.5rem 2rem; }
+.join .section-title { color: var(--white); margin-bottom: 0.75rem; }
+.join-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3.5rem; align-items: center;
+}
+.join-body { color: rgba(255,255,255,0.6); font-size: 0.97rem; line-height: 1.72; margin-bottom: 0; }
+.join-actions {
+  display: flex; gap: 0; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; overflow: hidden;
+}
+.join-action {
+  flex: 1; padding: 1.6rem 1.5rem;
+  background: rgba(255,255,255,0.05);
+}
+.join-action h4 {
+  font-size: 0.92rem; font-weight: 600; color: rgba(255,255,255,0.85);
+  margin-bottom: 0.35rem;
+}
+.join-action p { font-size: 0.83rem; color: rgba(255,255,255,0.42); line-height: 1.55; }
+.join-divider { width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+
+
+
+@media (max-width: 860px) {
+  .hero-inner, .problem-grid, .steps, .examples-grid, .why-grid, .join-row { grid-template-columns: 1fr; }
+  .hero-inner { gap: 1.5rem; }
+  .demo-cols { grid-template-columns: 1fr 1fr; }
+  .nav-center { display: none; }
+  .nav-badge { display: none; }
+  .join-actions { flex-direction: column; }
+  .join-divider { width: auto; height: 1px; }
+  .quote-strip { padding: 1.25rem 1.5rem; }
+  .hero { padding: 4.5rem 1.25rem 2.5rem; }
+  .hero-headline { font-size: 1.75rem; }
+  .hero-body { font-size: 0.92rem; }
+  .hero-pills { margin-bottom: 0; }
+}
+@media (max-width: 500px) {
+  .demo-cols { grid-template-columns: 1fr; }
+  .nav-logo { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Patch the <span>Primary</span></a>
+  <ul class="nav-center">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#why">Why It Matters</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-badge">California 2028 Ballot Initiative</span>
+    <a href="#join" class="btn-nav">Get Involved</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <!-- Left: text + CTAs -->
+    <div>
+      <h2 class="hero-headline">The top-two primary was a good idea.<br><em>Vote-splitting is spoiling it.</em></h2>
+      <p class="hero-answer">The answer is <strong>approval voting</strong>—let voters choose as many candidates as they like.</p>
+    </div>
+
+    <!-- Right: ballot comparison + results -->
+    <div class="demo-wrap">
+      <div class="demo-cols">
+        <!-- CHOOSE-ONE -->
+        <div>
+          <div class="demo-label bad">Current: Vote for ONE</div>
+          <div class="demo-ballot">
+            <div class="demo-row">
+              <div class="ctrl-radio"></div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate A</span><span class="cand-pct">20% of vote</span></div>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-radio"></div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">19% of vote</span></div>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-radio"></div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">16% of vote</span></div>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-radio sel"></div>
+              <div class="cand-dot dot-b"></div>
+              <div class="cand-info"><span class="cand-name">Candidate D</span><span class="cand-pct">24% of vote</span></div>
+              <span class="cand-adv">ADVANCES</span>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-radio"></div>
+              <div class="cand-dot dot-b"></div>
+              <div class="cand-info"><span class="cand-name">Candidate E</span><span class="cand-pct">21% of vote</span></div>
+              <span class="cand-adv">ADVANCES</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPROVAL -->
+        <div>
+          <div class="demo-label good">Proposed: Mark all you support</div>
+          <div class="demo-ballot">
+            <div class="demo-row">
+              <div class="ctrl-check on">✓</div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate A</span><span class="cand-pct">approved by 55%</span></div>
+              <span class="cand-adv">ADVANCES</span>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-check on">✓</div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">approved by 49%</span></div>
+              <span class="cand-adv">ADVANCES</span>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-check on">✓</div>
+              <div class="cand-dot dot-a"></div>
+              <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">approved by 38%</span></div>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-check"></div>
+              <div class="cand-dot dot-b"></div>
+              <div class="cand-info"><span class="cand-name">Candidate D</span><span class="cand-pct">approved by 45%</span></div>
+            </div>
+            <div class="demo-row">
+              <div class="ctrl-check"></div>
+              <div class="cand-dot dot-b"></div>
+              <div class="cand-info"><span class="cand-name">Candidate E</span><span class="cand-pct">approved by 42%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:0.68rem;color:rgba(255,255,255,0.22);margin-top:0.5rem;text-align:center;">Illustrative example. This pattern is playing out across California primaries right now.</p>
+    </div>
+  </div>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- QUOTE STRIP - immediately after ballot demo -->
+<div class="quote-strip">
+  <div class="quote-strip-inner">
+    <div class="quote-strip-avatar">ME</div>
+    <div class="quote-strip-text">
+      <p>"The right way to fix California's primaries is to adopt approval voting. It's not by going back to the highly problematic partisan primary system."</p>
+      <span class="quote-strip-attr">Micah Erfan &mdash; Political Communicator &amp; Consultant · 1B+ views · UVA Law '28</span>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">Choose-one creates division<br>even where agreement exists.</h2>
+    <p class="section-body">California's top-two primary was designed to give all voters a voice. But when voters who largely agree are forced to mark just one candidate, their support gets divided by the ballot structure itself—not by genuine disagreement. Some want to repeal the whole system. We think that's the wrong answer.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card-icon icon-red">✕</div>
+        <h3>The repeal initiative goes backward</h3>
+        <p>A new initiative wants to scrap the top-two entirely and return to closed partisan primaries—where party bases, not all Californians, decide who advances. That means more polarization, not less.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card-icon icon-gold">→</div>
+        <h3>Approval voting goes forward</h3>
+        <p>Instead of marking one candidate and hoping for the best, voters mark every candidate they genuinely support. The two with the most approval advance. No wasted votes. No vote-splitting. No strategic guessing required.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">One sentence. Profound difference.</h2>
+    <p class="section-body">Change one sentence in the ballot instructions: instead of "vote for one," voters mark every candidate they approve of. The two candidates with the widest genuine voter support advance to the general election.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Mark every candidate you support</h3>
+        <p>No limit. No ranking. Just vote your conscience—no need to think about how everyone else will vote. If you support three candidates, mark three.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Every mark counts equally</h3>
+        <p>Supporting multiple candidates will never help the candidates you don't want to advance. Your full support goes to everyone you approve—without any tradeoffs.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>The two most supported advance</h3>
+        <p>Same top-two structure California already uses. Just better math—so the candidates with the widest genuine voter support actually make it through.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REAL WORLD -->
+<section class="real-world" id="why">
+  <div class="container">
+    <div class="section-label">Proven in the Real World</div>
+    <h2 class="section-title">This isn't theory.<br>It's already working.</h2>
+    <p class="section-body">Approval voting has been adopted by real American cities—with documented outcomes that show exactly what we'd expect: candidates with the widest genuine support win.</p>
+    <div class="examples-grid">
+      <div class="example-card">
+        <div class="example-stat">63.5%</div>
+        <h4>Fargo, ND — 2018</h4>
+        <p>First U.S. city to adopt approval voting in a public election. Passed with a landslide majority.</p>
+      </div>
+      <div class="example-card">
+        <div class="example-stat">68%</div>
+        <h4>St. Louis, MO — 2020</h4>
+        <p>Passed with 68% of the vote. In the first approval voting election, the machine candidate—later found corrupt—lost to two consensus alternatives who would have split the vote and lost under choose-one.</p>
+      </div>
+    </div>
+    <div class="example-note">
+      <p><strong>California's voting machines already support approval voting.</strong> No new hardware. No new software. No implementation cost. The only change is one sentence in the ballot instructions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="why">
+  <div class="container">
+    <div class="section-label">Why Approval Voting</div>
+    <h2 class="section-title">Simpler. Fairer. Better math.</h2>
+    <p class="section-body">Compared to every other proposed reform, approval voting is the most straightforward fix with the strongest track record.</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-stat">$0</div>
+        <h4>Implementation cost</h4>
+        <p>California's existing voting machines handle approval voting natively. One sentence changes on ballot instructions. Nothing else.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-stat">VSE</div>
+        <h4>Best-in-class outcomes</h4>
+        <p>Voter Satisfaction Efficiency simulations consistently show approval voting produces outcomes closer to what voters actually want than choose-one or IRV.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-stat">2×</div>
+        <h4>Won with landslides</h4>
+        <p>Both cities that adopted approval voting did so with over 60% of the vote. Voters understand it immediately and embrace it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-label">Common Questions</div>
+    <h2 class="section-title">Why not RCV, Alaska model, or repeal?</h2>
+    <p class="section-body">Good questions deserve honest answers.</p>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Why not ranked choice voting (IRV)?</div>
+        <div class="faq-a">
+          <p>IRV fails at its core job: it can eliminate the most broadly popular candidate. Burlington, Vermont adopted it, watched it knock out the most widely liked candidate, and repealed it. The problem is structural, not incidental.</p>
+          <p>Beyond that, IRV only applies to the general election—leaving the primary completely untouched. You're adding complexity where it's least needed while ignoring where vote-splitting actually happens.</p>
+          <details><summary>Go deeper</summary><p>IRV violates the monotonicity criterion—you can literally hurt a candidate by ranking them higher. It scores lower than approval voting on Voter Satisfaction Efficiency (VSE), a simulation-based measure of how close election outcomes come to maximizing voter welfare. Approval voting achieves higher VSE with a dramatically simpler ballot. <a href="https://clayshentrup.medium.com/final-five-voting-b80d08f63111" target="_blank">Full analysis →</a></p></details>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Why not the Alaska model or Final Five voting?</div>
+        <div class="faq-a">
+          <p>The Alaska model is radically complex: multiple candidates advance, voters must rank all of them, and results go through multiple elimination rounds. This isn't just inconvenient—it's a real barrier to voter confidence and participation.</p>
+          <p>Worse, it still uses choose-one voting in the primary. Vote-splitting remains intact at the stage where it matters most. All the complexity of reform with none of the actual fix.</p>
+          <details><summary>Go deeper</summary><p>In an analysis of 1,362 IRV elections, the winner came from 3rd place or lower exactly 4 times—less than 0.3% of the time. Advancing five candidates instead of two adds enormous complexity while changing almost nothing about outcomes. A two-candidate general is also the only election that is completely strategy-free. Approval voting achieves lower Bayesian regret scores with a single ballot instruction change. <a href="https://clayshentrup.medium.com/final-five-voting-b80d08f63111" target="_blank">Full analysis →</a></p></details>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Why not just repeal the top-two entirely?</div>
+        <div class="faq-a">
+          <p>Repeal means returning to closed partisan primaries—where only party members vote, and party bases decide who advances. That's the structure that produced the polarization Californians voted to escape in 2010.</p>
+          <p>Vote-splitting in multi-candidate primaries is already handing seats to candidates who don't reflect the majority preference of the district's voters. Approval voting fixes this directly. Repeal makes it permanent.</p>
+          <details><summary>Go deeper</summary><p>Closed partisan primaries systematically produce nominees further from the median voter, because the primary electorate is ideologically unrepresentative of the general population. This is one of the most well-documented structural causes of legislative polarization. The top-two was an attempt to correct this—approval voting completes that correction.</p></details>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Why approval voting specifically?</div>
+        <div class="faq-a">
+          <p>It's the simplest possible fix—one sentence changes in the ballot instructions. Mark every candidate you support. The two with the most support advance. No new hardware. No new software. California's existing machines already handle it.</p>
+          <p>It's proven. Fargo adopted it in 2018. St. Louis adopted it in 2020 with 68% of the vote—and in the very first approval voting election, the machine candidate lost to two consensus alternatives who would have split the vote and lost under choose-one.</p>
+          <details><summary>Go deeper</summary><p>Approval voting achieves among the highest Voter Satisfaction Efficiency scores of any simple ballot method. Supporting an additional candidate can never hurt your primary preference—no tradeoff, no strategy, no wasted vote. Deep dive: <a href="https://wonk.blog/duopoly" target="_blank">wonk.blog/duopoly</a> and <a href="https://clayshentrup.medium.com/later-no-harm-72c44e145510" target="_blank">on Later-No-Harm →</a></p></details>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOIN -->
+<section class="join" id="join">
+  <div class="container">
+    <div class="join-row">
+      <div class="join-left">
+        <div class="section-label" style="color:rgba(201,138,26,0.82);">Get Involved</div>
+        <h2 class="section-title">Help patch the primary.</h2>
+        <p class="join-body">We're building a coalition of voters, organizers, and donors committed to making California's primary work the way it was intended. Whether you have five minutes or five thousand dollars, there's a role for you.</p>
+      </div>
+      <div class="join-right">
+        <div class="join-actions">
+          <div class="join-action">
+            <h4>Join the conversation</h4>
+            <p>The organizing is happening on Discord right now.</p>
+            <a href="https://discord.gg/AVq8cc5pu4" class="discord-link" target="_blank" style="margin-top:0.75rem;">
+              <svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M15.25 1.2A14.9 14.9 0 0 0 11.57.06a.06.06 0 0 0-.06.03c-.16.28-.34.65-.46.93a13.74 13.74 0 0 0-4.1 0 9.5 9.5 0 0 0-.47-.93.06.06 0 0 0-.06-.03A14.86 14.86 0 0 0 2.74 1.2a.05.05 0 0 0-.03.02C.4 4.64-.24 7.97.07 11.25a.06.06 0 0 0 .02.04 14.96 14.96 0 0 0 4.49 2.27.06.06 0 0 0 .07-.02c.35-.47.66-.97.93-1.5a.06.06 0 0 0-.03-.08 9.85 9.85 0 0 1-1.41-.67.06.06 0 0 1-.01-.1c.1-.07.19-.15.28-.22a.06.06 0 0 1 .06-.01c2.96 1.35 6.16 1.35 9.08 0a.06.06 0 0 1 .06.01c.1.07.19.15.28.22a.06.06 0 0 1-.01.1c-.45.26-.92.48-1.4.67a.06.06 0 0 0-.04.08c.28.52.59 1.02.93 1.5a.06.06 0 0 0 .07.02 14.9 14.9 0 0 0 4.5-2.27.06.06 0 0 0 .02-.04c.37-3.83-.62-7.13-2.63-10.03a.05.05 0 0 0-.03-.02ZM6.01 9.25c-.88 0-1.61-.81-1.61-1.8s.71-1.8 1.61-1.8c.9 0 1.62.81 1.61 1.8 0 .99-.71 1.8-1.61 1.8Zm5.96 0c-.88 0-1.61-.81-1.61-1.8s.71-1.8 1.61-1.8c.9 0 1.62.81 1.61 1.8 0 .99-.7 1.8-1.61 1.8Z" fill="currentColor"/></svg>
+              Join our Discord
+            </a>
+          </div>
+          <div class="join-divider"></div>
+          <div class="join-action">
+            <h4>Get in touch</h4>
+            <p>Volunteer, donate, or just learn more.</p>
+            <a class="btn-primary" id="contact-btn" style="cursor:pointer;margin-top:0.75rem;display:inline-block;">Contact Us →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Patch the <span>Primary</span></div>
+  <p>A California 2028 ballot initiative campaign.<br>
+  Supported by <a href="https://electionscience.org" target="_blank">Center for Election Science</a> · <a href="https://californiaapproves.org" target="_blank">California Approves</a> · <a href="https://equal.vote" target="_blank">Equal Vote Coalition</a></p>
+  <p style="margin-top:1.1rem;"><a id="footer-email" style="cursor:pointer;">Contact us</a></p>
+</footer>
+
+<script>
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.problem-card, .step, .example-card, .why-card, .faq-item').forEach(el => {
+    el.style.opacity='0'; el.style.transform='translateY(12px)';
+    el.style.transition='opacity 0.42s ease, transform 0.42s ease';
+    obs.observe(el);
+  });
+  (function() {
+    const href = 'mailto:hi@patchtheprimary' + '.com';
+    const b = document.getElementById('contact-btn');
+    if (b) b.setAttribute('href', href);
+    const f = document.getElementById('footer-email');
+    if (f) { f.setAttribute('href', href); f.textContent = 'hi@patchtheprimary.com'; }
+  })();
+</script>
+</body>
+</html>
