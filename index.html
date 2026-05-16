@@ -56,10 +56,11 @@ nav {
   pointer-events: none;
 }
 .scroll-hint {
-  position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
   color: rgba(255,255,255,0.2); font-size: 0.65rem; font-weight: 500;
   letter-spacing: 0.14em; text-transform: uppercase;
   display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  pointer-events: none; z-index: 2;
 }
 .scroll-hint::after {
   content: ''; width: 1px; height: 22px;
@@ -115,6 +116,10 @@ nav {
 .ctrl-radio.sel::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.75); }
 .ctrl-check { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: transparent; }
 .ctrl-check.on { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.85); }
+.clickable { cursor: pointer; transition: background 0.15s; }
+.clickable:hover { background: rgba(255,255,255,0.04); border-radius: 4px; }
+.advances-note { opacity: 0.75; }
+.ballot-note { font-size: 0.64rem; color: rgba(255,255,255,0.28); margin-top: 0.5rem; font-style: italic; }
 .party-header { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 0 0.2rem; opacity: 0.85; }
 .cand-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .dot-a { background: var(--a-color); }
@@ -306,6 +311,7 @@ footer a:hover { color: var(--gold); }
 
 @media (max-width: 860px) {
   .problem-grid, .steps, .examples-grid, .why-grid, .join-row { grid-template-columns: 1fr; }
+  .scroll-hint { display: none; }
   .hero-inner { gap: 1.5rem; }
   .demo-cols { grid-template-columns: 1fr 1fr; }
   .nav-center { display: none; }
@@ -354,31 +360,31 @@ footer a:hover { color: var(--gold); }
         <!-- CHOOSE-ONE -->
         <div>
           <div class="demo-label bad">Current: Vote for ONE</div>
-          <div class="demo-ballot">
+          <div class="demo-ballot" id="ballot-choose">
             <div class="party-header" style="color:var(--a-color);">Party A &mdash; 55% combined</div>
-            <div class="demo-row">
-              <div class="ctrl-radio"></div>
+            <div class="demo-row clickable" data-ballot="choose" data-idx="0">
+              <div class="ctrl-radio sel"></div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate A</span><span class="cand-pct">20% of vote</span></div>
             </div>
-            <div class="demo-row">
+            <div class="demo-row clickable" data-ballot="choose" data-idx="1">
               <div class="ctrl-radio"></div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">19% of vote</span></div>
             </div>
-            <div class="demo-row" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
+            <div class="demo-row clickable" data-ballot="choose" data-idx="2" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
               <div class="ctrl-radio"></div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">16% of vote</span></div>
             </div>
             <div class="party-header" style="color:var(--b-color);">Party B &mdash; 45% combined</div>
-            <div class="demo-row">
-              <div class="ctrl-radio sel"></div>
+            <div class="demo-row clickable" data-ballot="choose" data-idx="3">
+              <div class="ctrl-radio"></div>
               <div class="cand-dot dot-b"></div>
               <div class="cand-info"><span class="cand-name">Candidate D</span><span class="cand-pct">24% of vote</span></div>
               <span class="cand-adv">ADVANCES</span>
             </div>
-            <div class="demo-row">
+            <div class="demo-row clickable" data-ballot="choose" data-idx="4">
               <div class="ctrl-radio"></div>
               <div class="cand-dot dot-b"></div>
               <div class="cand-info"><span class="cand-name">Candidate E</span><span class="cand-pct">21% of vote</span></div>
@@ -390,40 +396,41 @@ footer a:hover { color: var(--gold); }
         <!-- APPROVAL -->
         <div>
           <div class="demo-label good">Proposed: Mark all you support</div>
-          <div class="demo-ballot">
-            <div class="party-header" style="color:var(--a-color);">Party A &mdash; 55% combined</div>
-            <div class="demo-row">
+          <div class="demo-ballot" id="ballot-approval">
+            <div class="party-header" style="color:var(--a-color);">Party A</div>
+            <div class="demo-row clickable" data-ballot="approval" data-idx="0">
               <div class="ctrl-check on">✓</div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate A</span><span class="cand-pct">approved by 55%</span></div>
               <span class="cand-adv">ADVANCES</span>
             </div>
-            <div class="demo-row">
-              <div class="ctrl-check on">✓</div>
+            <div class="demo-row clickable" data-ballot="approval" data-idx="1">
+              <div class="ctrl-check"></div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">approved by 49%</span></div>
-              <span class="cand-adv">ADVANCES</span>
+              <span class="cand-adv advances-note">ADVANCES</span>
             </div>
-            <div class="demo-row" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
+            <div class="demo-row clickable" data-ballot="approval" data-idx="2" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
               <div class="ctrl-check on">✓</div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">approved by 38%</span></div>
             </div>
-            <div class="party-header" style="color:var(--b-color);">Party B &mdash; 45% combined</div>
-            <div class="demo-row">
+            <div class="party-header" style="color:var(--b-color);">Party B</div>
+            <div class="demo-row clickable" data-ballot="approval" data-idx="3">
               <div class="ctrl-check"></div>
               <div class="cand-dot dot-b"></div>
               <div class="cand-info"><span class="cand-name">Candidate D</span><span class="cand-pct">approved by 45%</span></div>
             </div>
-            <div class="demo-row">
+            <div class="demo-row clickable" data-ballot="approval" data-idx="4">
               <div class="ctrl-check"></div>
               <div class="cand-dot dot-b"></div>
               <div class="cand-info"><span class="cand-name">Candidate E</span><span class="cand-pct">approved by 42%</span></div>
             </div>
           </div>
+          <p class="ballot-note">★ Advances based on all voters—not just yours</p>
         </div>
       </div>
-      <p style="font-size:0.68rem;color:rgba(255,255,255,0.22);margin-top:0.5rem;text-align:center;">Illustrative example. This pattern is playing out across California primaries right now.</p>
+      <p style="font-size:0.68rem;color:rgba(255,255,255,0.22);margin-top:0.5rem;text-align:center;">Try clicking the ballots. Outcomes reflect all voters combined.</p>
     </div>
   </div>
   <div class="scroll-hint">scroll</div>
@@ -641,6 +648,25 @@ footer a:hover { color: var(--gold); }
     el.style.transition='opacity 0.42s ease, transform 0.42s ease';
     obs.observe(el);
   });
+  // Interactive ballots
+  // Choose-one: clicking selects that radio, deselects others
+  document.querySelectorAll('.demo-row.clickable[data-ballot="choose"]').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('[data-ballot="choose"] .ctrl-radio').forEach(r => r.classList.remove('sel'));
+      row.querySelector('.ctrl-radio').classList.add('sel');
+    });
+  });
+
+  // Approval: clicking toggles that checkbox independently
+  document.querySelectorAll('.demo-row.clickable[data-ballot="approval"]').forEach(row => {
+    row.addEventListener('click', () => {
+      const cb = row.querySelector('.ctrl-check');
+      const isOn = cb.classList.contains('on');
+      cb.classList.toggle('on', !isOn);
+      cb.textContent = isOn ? '' : '✓';
+    });
+  });
+
   (function() {
     const href = 'mailto:hi@patchtheprimary' + '.com';
     const b = document.getElementById('contact-btn');
