@@ -71,9 +71,13 @@ nav {
 }
 .hero-inner {
   position: relative; max-width: 1160px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2.5rem;
   animation: fadeUp 0.6s ease both;
 }
+.hero-text { text-align: center; max-width: 720px; }
+.hero-ballots-wrap { width: 100%; }
 
 /* Hero left */
 .hero-tag { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
@@ -94,7 +98,7 @@ nav {
 
 /* Hero right — ballot demo */
 .demo-wrap { }
-.demo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.demo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 0 auto 1.25rem; max-width: 860px; }
 .demo-label { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.75rem; }
 .demo-label.bad { color: rgba(255,110,100,0.95); }
 .demo-label.good { color: rgba(201,168,42,1); }
@@ -111,6 +115,7 @@ nav {
 .ctrl-radio.sel::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.75); }
 .ctrl-check { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: transparent; }
 .ctrl-check.on { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.85); }
+.party-header { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 0 0.2rem; opacity: 0.85; }
 .cand-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .dot-a { background: var(--a-color); }
 .dot-b { background: var(--b-color); }
@@ -159,7 +164,7 @@ section { padding: 5rem 2rem; }
 .section-body { font-size: 1rem; color: var(--text-mid); line-height: 1.75; max-width: 650px; }
 
 /* PROBLEM */
-.problem { background: var(--cream); }
+.problem { background: var(--cream); padding-top: 2.5rem; }
 .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-top: 2.75rem; }
 .problem-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 1.6rem; }
 .problem-card-icon { width: 34px; height: 34px; border-radius: 7px; margin-bottom: 0.9rem; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
@@ -251,7 +256,7 @@ footer a:hover { color: var(--gold); }
   background: var(--gold-pale);
   border-top: 1px solid rgba(201,138,26,0.25);
   border-bottom: 1px solid rgba(201,138,26,0.25);
-  padding: 1.5rem 2.5rem;
+  padding: 1.25rem 2.5rem;
 }
 .quote-strip-inner {
   max-width: 1160px; margin: 0 auto;
@@ -300,7 +305,7 @@ footer a:hover { color: var(--gold); }
 
 
 @media (max-width: 860px) {
-  .hero-inner, .problem-grid, .steps, .examples-grid, .why-grid, .join-row { grid-template-columns: 1fr; }
+  .problem-grid, .steps, .examples-grid, .why-grid, .join-row { grid-template-columns: 1fr; }
   .hero-inner { gap: 1.5rem; }
   .demo-cols { grid-template-columns: 1fr 1fr; }
   .nav-center { display: none; }
@@ -338,19 +343,19 @@ footer a:hover { color: var(--gold); }
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <!-- Left: text + CTAs -->
-    <div>
+    <div class="hero-text">
       <h2 class="hero-headline">The top-two primary was a good idea.<br><em>Vote-splitting is spoiling it.</em></h2>
       <p class="hero-answer">The answer is <strong>approval voting</strong>—let voters choose as many candidates as they like.</p>
     </div>
 
-    <!-- Right: ballot comparison + results -->
-    <div class="demo-wrap">
+    <!-- Ballots full-width below text -->
+    <div class="demo-wrap" style="width:100%;">
       <div class="demo-cols">
         <!-- CHOOSE-ONE -->
         <div>
           <div class="demo-label bad">Current: Vote for ONE</div>
           <div class="demo-ballot">
+            <div class="party-header" style="color:var(--a-color);">Party A &mdash; 55% combined</div>
             <div class="demo-row">
               <div class="ctrl-radio"></div>
               <div class="cand-dot dot-a"></div>
@@ -361,11 +366,12 @@ footer a:hover { color: var(--gold); }
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">19% of vote</span></div>
             </div>
-            <div class="demo-row">
+            <div class="demo-row" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
               <div class="ctrl-radio"></div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">16% of vote</span></div>
             </div>
+            <div class="party-header" style="color:var(--b-color);">Party B &mdash; 45% combined</div>
             <div class="demo-row">
               <div class="ctrl-radio sel"></div>
               <div class="cand-dot dot-b"></div>
@@ -385,6 +391,7 @@ footer a:hover { color: var(--gold); }
         <div>
           <div class="demo-label good">Proposed: Mark all you support</div>
           <div class="demo-ballot">
+            <div class="party-header" style="color:var(--a-color);">Party A &mdash; 55% combined</div>
             <div class="demo-row">
               <div class="ctrl-check on">✓</div>
               <div class="cand-dot dot-a"></div>
@@ -397,11 +404,12 @@ footer a:hover { color: var(--gold); }
               <div class="cand-info"><span class="cand-name">Candidate B</span><span class="cand-pct">approved by 49%</span></div>
               <span class="cand-adv">ADVANCES</span>
             </div>
-            <div class="demo-row">
+            <div class="demo-row" style="border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:0.5rem;padding-bottom:0.5rem;">
               <div class="ctrl-check on">✓</div>
               <div class="cand-dot dot-a"></div>
               <div class="cand-info"><span class="cand-name">Candidate C</span><span class="cand-pct">approved by 38%</span></div>
             </div>
+            <div class="party-header" style="color:var(--b-color);">Party B &mdash; 45% combined</div>
             <div class="demo-row">
               <div class="ctrl-check"></div>
               <div class="cand-dot dot-b"></div>
